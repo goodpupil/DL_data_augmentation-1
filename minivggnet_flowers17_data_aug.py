@@ -1,14 +1,12 @@
 # import the necessary packages
-
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
-
 from preprocessing.imagetoarraypreprocessor import ImageToArrayPreprocessor
 from preprocessing.aspectawarepreprocessor import AspectAwarePreprocessor
 from dataset.simpledatasetloader import SimpleDatasetLoader
 from dnn.minivggnet import MiniVGGNet
-
+from keras.preprocessing.image import ImageDataGenerator
 from keras.optimizers import SGD
 from imutils import paths
 import matplotlib.pyplot as plt
@@ -18,7 +16,8 @@ import os
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-d", "--dataset", required=True, help="path to input dataset")
+ap.add_argument("-d", "--dataset", required=True,
+    help="path to input dataset")
 args = vars(ap.parse_args())
 
 # grab the list of images that we’ll be describing, then extract
@@ -47,6 +46,11 @@ data = data.astype("float") / 255.0
 trainY = LabelBinarizer().fit_transform(trainY)
 testY = LabelBinarizer().fit_transform(testY)
 
+# construct the image generator for data augmentation
+aug = ImageDataGenerator(rotation_range=30, width_shift_range=0.1,
+    height_shift_range=0.1, shear_range=0.2, zoom_range=0.2,
+    horizontal_flip=True, fill_mode="nearest")
+
 # initialize the optimizer and model
 print("[INFO] compiling model...")
 opt = SGD(lr=0.05)
@@ -57,8 +61,9 @@ model.compile(loss="categorical_crossentropy", optimizer=opt,
 
 # train the network
 print("[INFO] training network...")
-H = model.fit(trainX, trainY, validation_data=(testX, testY),
-    batch_size=32, epochs=100, verbose=1)
+H = model.fit_generator(aug.flow(trainX, trainY, batch_size=32),
+    validation_data=(testX, testY), steps_per_epoch=len(trainX) // 32,
+    epochs=100, verbose=1)
 
 # evaluate the network
 print("[INFO] evaluating network...")
@@ -78,5 +83,4 @@ plt.xlabel("Epoch #")
 plt.ylabel("Loss/Accuracy")
 plt.legend()
 plt.show()
-
 
