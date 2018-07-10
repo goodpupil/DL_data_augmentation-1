@@ -17,3 +17,7 @@ Train with data augmentation:
 ```sh
 $ python minivggnet_flowers17_data_aug.py --dataset "path_to_dataset"
 ```
+
+# Reference
+This code was obtained from book "Deep Learning for Compution Vision".
+
